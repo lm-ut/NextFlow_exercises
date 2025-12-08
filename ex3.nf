@@ -10,10 +10,20 @@ process ped_to_bim {
 	publishDir "01_Binary_PLINK", mode: "copy"
 
 	input:
+
+// val e' un valore generico, NON un file, passa una str/num
+// passera' l'etichetta 'sample1' o 'sample2' passata in cmdline
+
+// path indica che val e' un file (??)
+
+// tuple all'inizio indica che gli stiamo rifilando un minestrone
 	tuple val(sample), path(ped), path(map)
 
 	output:
-        tuple val(sample), path("${sample}.bed"), path("${sample}.bim"), path("${sample}.fam")
+        tuple val(sample), 
+	path("${sample}.bed"), 
+	path("${sample}.bim"), 
+	path("${sample}.fam")
 
 	script: 
 	"""
@@ -32,14 +42,19 @@ process count_snps {
 	publishDir "02_SNP_count", mode: "copy"
 
 	input:
-	tuple val(sample), path(bed), path(bim), path(fam)
+
+// Keep all files for best pract, even if currently only bim is needed
+	tuple val(sample), 
+	path(bed),
+	path(bim),
+	path(fam)
 
 	output:
 	tuple val(sample), path("${sample}.snpcount.txt")
 
 	script: 
 	"""
-	wc -l ${bim_files} > ${sample}.snpcount
+	wc -l ${bim} > ${sample}.snpcount
 	"""
 }
 
@@ -51,7 +66,7 @@ process count_snps {
 
 process new_process_name {
 
-	publishDir "03_Plots", made: "copy"
+	publishDir "03_Plots", mode: "copy"
 
 	input: 
 	path count_snps_file
@@ -74,7 +89,7 @@ workflow {
 ped_ch = Channel.fromPath("*.ped")
 
 samples = ped_ch.map {ped -> 
-	def base = pd.baseName
+	def base = ped.baseName
 	def map = file("${base}.map")
 	tuple(base, ped, map)
 }
@@ -85,8 +100,13 @@ plinked = ped_to_bim(samples)
 // 3. Process 2
 count_snps = process_2(plinked)
 
-// 4. Process 3
-all_counts = count_snps.map { sample, file -> file }.collect() 
+// 4. Conditional Collect
 
-python_summary(all_counts) 
+merged_counts = count_snps 
+		.map {sample, file -> file}
+		.collect { it.size() >= 2}
+
+// 5. Process 3
+python_summary(merged_counts) 
 }
+
