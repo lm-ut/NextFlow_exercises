@@ -27,7 +27,7 @@ process ped_to_bim {
 
 	script: 
 	"""
-	plink --file ${sample} --make-bed --out ${sample} 
+	plink --ped ${ped} --map ${map} --make-bed --out ${sample} 
 	"""
 }
 
@@ -54,7 +54,7 @@ process count_snps {
 
 	script: 
 	"""
-	wc -l ${bim} > ${sample}.snpcount
+	wc -l ${bim} > ${sample}.snpcount.txt
 	"""
 }
 
@@ -76,7 +76,7 @@ process plotting {
 
 	script: 
 	"""
-	python plotting_script.py --input ${file_snpcount.join(' ')} --output plot_samples.png
+	python ${projectDir}/plotting_script.py --input ${file_snpcount.join(' ')} --output plot_samples.png
 	"""
 }
 
@@ -105,9 +105,8 @@ count_snps = count_snps(plinked)
 
 merged_counts = count_snps 
 		.map {sample, file -> file}
-		.collect { it.size() >= 2}
+		.collect()
 
 // 5. Process 3
 plotting(merged_counts) 
 }
-
