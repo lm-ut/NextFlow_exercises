@@ -64,18 +64,19 @@ process count_snps {
 // Producing a plot with SNP count
 //
 
-process new_process_name {
+process plotting {
 
 	publishDir "03_Plots", mode: "copy"
 
 	input: 
-	path count_snps_file
+	path file_snpcount
 
 	output:
-	path "plot_sample"
+	path "plot_samples.png"
 
 	script: 
 	"""
+	python plotting_script.py --input ${file_snpcount.join(' ')} --output plot_samples.png
 	"""
 }
 
@@ -98,7 +99,7 @@ samples = ped_ch.map {ped ->
 plinked = ped_to_bim(samples)
 
 // 3. Process 2
-count_snps = process_2(plinked)
+count_snps = count_snps(plinked)
 
 // 4. Conditional Collect
 
@@ -107,6 +108,6 @@ merged_counts = count_snps
 		.collect { it.size() >= 2}
 
 // 5. Process 3
-python_summary(merged_counts) 
+plotting(merged_counts) 
 }
 
