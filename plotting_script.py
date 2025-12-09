@@ -10,7 +10,7 @@ import os
 # Functions
 
 def parse_args(): 
-	parser = argparser.ArgumentParser(description = "Plot SNP counts")
+	parser = argparse.ArgumentParser(description = "Plot SNP counts")
 	parser.add_argument("--input", nargs="+", required=True, help="List of SNP count files")
 	parser.add_argument("--output", default = "snp_plot.png", help="Output plot file")
 
@@ -31,7 +31,7 @@ def main():
 		samples.append(sample)
 		counts.append(count)
 
-	df = pd.DataFrame({"sample" :sample, "sample_count" :counts})
+	df = pd.DataFrame({"sample" :sample, "snp_count" :counts})
 	df = df.sort_values("sample")
 
 	plt.figure(figsize=(6,4))
